@@ -1,0 +1,36 @@
+version: '3.1'
+services:
+  circleci-service:
+    build:
+      context: ./circleci-service
+    links:
+      - kafka
+    depends_on:
+      - kafka
+    env_file: .env
+  resource-service:
+    build:
+      context: ./resource-service
+    links:
+      - kafka
+    depends_on:
+      - kafka
+    env_file: .env
+  github-app:
+    build:
+      context: ./github-app
+    ports:
+      - "3000:3000"
+    links:
+      - kafka
+    depends_on:
+      - kafka
+    env_file: .env
+  kafka:
+    image: spotify/kafka
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    environment:
+      ADVERTISED_PORT: 9092
+      ADVERTISED_HOST: kafka
