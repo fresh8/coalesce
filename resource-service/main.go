@@ -54,18 +54,44 @@ func processInstallationRepositoriesMessage(message []byte) error {
 	case "added":
 		fmt.Printf("Repositories added by %s, save it to the database and process\n", githubInstallationRepositoriesMessage.Sender.Login)
 		for _, repo := range githubInstallationRepositoriesMessage.RepositoriesAdded {
-			fmt.Printf("\t%s\n", repo.FullName)
-			publishEvent([]byte("repo_added"), []byte(fmt.Sprintf(`{"repo_name":%q,"user":%q}`, repo.FullName, githubInstallationRepositoriesMessage.Sender.Login)))
+			repoUpdatedMessage, err := createRepoUpdatedMessage(
+				repo.FullName,
+				githubInstallationRepositoriesMessage.Sender.Login,
+			)
+
+			if err != nil {
+				return err
+			}
+
+			publishEvent([]byte("repo_added"), repoUpdatedMessage)
 		}
+
 	case "removed":
 		fmt.Printf("Repositories removed by %s, delete all the things\n", githubInstallationRepositoriesMessage.Sender.Login)
 		for _, repo := range githubInstallationRepositoriesMessage.RepositoriesRemoved {
-			fmt.Printf("\t%s\n", repo.FullName)
-			publishEvent([]byte("repo_removed"), []byte(fmt.Sprintf(`{"repo_name":%q,"user":%q}`, repo.FullName, githubInstallationRepositoriesMessage.Sender.Login)))
+			repoUpdatedMessage, err := createRepoUpdatedMessage(
+				repo.FullName,
+				githubInstallationRepositoriesMessage.Sender.Login,
+			)
+
+			if err != nil {
+				return err
+			}
+
+			publishEvent([]byte("repo_removed"), repoUpdatedMessage)
 		}
 	}
 
 	return nil
+}
+
+func createRepoUpdatedMessage(repoName, user string) ([]byte, error) {
+	repoUpdatedMessage := RepoUpdatedMessage{
+		RepoName: repoName,
+		User:     user,
+	}
+
+	return json.Marshal(repoUpdatedMessage)
 }
 
 func publishEvent(key, value []byte) error {

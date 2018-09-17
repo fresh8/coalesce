@@ -19,7 +19,7 @@ type Sender struct {
 	Login string `json:"login"`
 }
 
-type NewRepositoryMessage struct {
+type RepoUpdatedMessage struct {
 	RepoName string `json:"repo_name"`
 	User     string `json:"user"`
 }
