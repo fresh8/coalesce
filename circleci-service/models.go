@@ -1,6 +1,6 @@
 package main
 
-type RepoAddedMessage struct {
+type RepoUpdatedMessage struct {
 	RepoName string `json:"repo_name"`
 	User     string `json:"user"`
 }
