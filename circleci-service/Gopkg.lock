@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/jszwedko/go-circleci"
+  packages = ["."]
+  revision = "0150d5f69b6fec5b54c699c832e1d6962c739529"
+  version = "v0.2.0"
+
+[[projects]]
   name = "github.com/segmentio/kafka-go"
   packages = ["."]
   revision = "48c37f796910d8154479aaa04ade5843ae4f55d0"
