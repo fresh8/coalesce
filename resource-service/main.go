@@ -9,10 +9,13 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+var (
+	brokerAddress = fmt.Sprintf("%s:%s", os.Getenv("KAFKA_ADDRESS"), os.Getenv("KAFKA_PORT"))
+)
+
 func main() {
 	fmt.Println("Running")
 
-	brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
 	messageBrokerReader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:   []string{brokerAddress},
 		Topic:     "github",
@@ -20,7 +23,11 @@ func main() {
 	})
 
 	// Only read new messages (according to Kafka)
-	messageBrokerReader.SetOffset(-2)
+	err := messageBrokerReader.SetOffset(-2)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	for {
 		message, err := messageBrokerReader.ReadMessage(context.Background())
@@ -38,7 +45,11 @@ func main() {
 		}
 	}
 
-	messageBrokerReader.Close()
+	err = messageBrokerReader.Close()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 func processInstallationRepositoriesMessage(message []byte) error {
@@ -61,7 +72,10 @@ func processInstallationRepositoriesMessage(message []byte) error {
 				return err
 			}
 
-			publishEvent([]byte("repo_added"), repoUpdatedMessage)
+			err = publishEvent([]byte("repo_added"), repoUpdatedMessage)
+			if err != nil {
+				return err
+			}
 		}
 
 	case "removed":
@@ -76,7 +90,10 @@ func processInstallationRepositoriesMessage(message []byte) error {
 				return err
 			}
 
-			publishEvent([]byte("repo_removed"), repoUpdatedMessage)
+			err = publishEvent([]byte("repo_removed"), repoUpdatedMessage)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -93,7 +110,6 @@ func createRepoUpdatedMessage(repoName, user string) ([]byte, error) {
 }
 
 func publishEvent(key, value []byte) error {
-	brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
 	messageBusWriter := kafka.NewWriter(kafka.WriterConfig{
 		Brokers: []string{brokerAddress},
 		Topic:   "coalesce",
@@ -107,10 +123,8 @@ func publishEvent(key, value []byte) error {
 		},
 	)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
-	messageBusWriter.Close()
-
-	return nil
+	return messageBusWriter.Close()
 }

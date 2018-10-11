@@ -10,6 +10,10 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+var (
+	brokerAddress = fmt.Sprintf("%s:%s", os.Getenv("KAFKA_ADDRESS"), os.Getenv("KAFKA_PORT"))
+)
+
 func main() {
 	fmt.Println("Running")
 	http.HandleFunc("/", func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -21,7 +25,6 @@ func main() {
 			http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 		}
 
-		brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
 		messageBusWriter := kafka.NewWriter(kafka.WriterConfig{
 			Brokers: []string{brokerAddress},
 			Topic:   "github",
@@ -37,10 +40,18 @@ func main() {
 			fmt.Println(err)
 		}
 
-		messageBusWriter.Close()
+		err = messageBusWriter.Close()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
 		fmt.Fprintf(responseWriter, "Received")
 	})
 
-	http.ListenAndServe(":3000", nil)
+	err := http.ListenAndServe(":3000", nil)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

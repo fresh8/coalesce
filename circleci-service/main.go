@@ -17,6 +17,8 @@ import (
 var (
 	client *circleci.Client
 	db     *sql.DB
+
+	brokerAddress = fmt.Sprintf("%s:%s", os.Getenv("KAFKA_ADDRESS"), os.Getenv("KAFKA_PORT"))
 )
 
 func main() {
@@ -24,7 +26,6 @@ func main() {
 
 	client = &circleci.Client{Token: os.Getenv("CIRCLECI_TOKEN")}
 
-	brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
 	messageBrokerReader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:   []string{brokerAddress},
 		Topic:     "coalesce",
@@ -34,7 +35,11 @@ func main() {
 	dbConnect()
 
 	// Only read new messages (according to Kafka)
-	messageBrokerReader.SetOffset(-2)
+	err := messageBrokerReader.SetOffset(-2)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	for {
 		message, err := messageBrokerReader.ReadMessage(context.Background())
@@ -52,7 +57,11 @@ func main() {
 		}
 	}
 
-	messageBrokerReader.Close()
+	err = messageBrokerReader.Close()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 func dbConnect() {
@@ -78,7 +87,10 @@ func processRepoAddedMessage(message []byte) error {
 	repoNameParts := strings.Split(repoUpdatedMessage.RepoName, "/")
 
 	// Follow the project first because CircleCI's API is found wanting
-	client.FollowProject(repoNameParts[0], repoNameParts[1])
+	_, err = client.FollowProject(repoNameParts[0], repoNameParts[1])
+	if err != nil {
+		return err
+	}
 
 	project, err := client.GetProject(repoNameParts[0], repoNameParts[1])
 	if err != nil {
@@ -106,29 +118,6 @@ func processRepoAddedMessage(message []byte) error {
 			return err
 		}
 	}
-
-	return nil
-}
-
-func publishEvent(key, value []byte) error {
-	brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
-	messageBusWriter := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: []string{brokerAddress},
-		Topic:   "coalesce",
-	})
-
-	fmt.Println("Sending", string(key), string(value))
-	err := messageBusWriter.WriteMessages(context.Background(),
-		kafka.Message{
-			Key:   key,
-			Value: value,
-		},
-	)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	messageBusWriter.Close()
 
 	return nil
 }
