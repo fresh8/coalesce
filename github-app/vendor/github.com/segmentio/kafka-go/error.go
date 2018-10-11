@@ -350,7 +350,7 @@ func dontExpectEOF(err error) error {
 	return err
 }
 
-func dreddErrors(errs ...error) error {
+func coalesceErrors(errs ...error) error {
 	for _, err := range errs {
 		if err != nil {
 			return err

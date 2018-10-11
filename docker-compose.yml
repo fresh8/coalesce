@@ -41,7 +41,7 @@ services:
   circleci-db:
     image: postgres:latest
     environment:
-      POSTGRES_DB: "dredd_circleci"
+      POSTGRES_DB: "coalesce_circleci"
       POSTGRES_USER: "docker"
       POSTGRES_PASSWORD: "docker"
     volumes:

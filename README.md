@@ -1,3 +1,3 @@
-# Dredd
+# Coalesce
 
 Working title.

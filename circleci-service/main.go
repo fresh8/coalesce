@@ -27,7 +27,7 @@ func main() {
 	brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
 	messageBrokerReader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:   []string{brokerAddress},
-		Topic:     "dredd",
+		Topic:     "coalesce",
 		Partition: 0,
 	})
 
@@ -57,7 +57,7 @@ func main() {
 
 func dbConnect() {
 	var err error
-	connStr := "postgres://docker:docker@circleci-db:5000/dredd_circleci?sslmode=disable"
+	connStr := "postgres://docker:docker@circleci-db:5000/coalesce_circleci?sslmode=disable"
 	fmt.Println("Connecting to DB")
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
@@ -114,7 +114,7 @@ func publishEvent(key, value []byte) error {
 	brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
 	messageBusWriter := kafka.NewWriter(kafka.WriterConfig{
 		Brokers: []string{brokerAddress},
-		Topic:   "dredd",
+		Topic:   "coalesce",
 	})
 
 	fmt.Println("Sending", string(key), string(value))

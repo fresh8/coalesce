@@ -96,7 +96,7 @@ func publishEvent(key, value []byte) error {
 	brokerAddress := fmt.Sprintf("%s:9092", os.Getenv("KAFKA_ADDRESS"))
 	messageBusWriter := kafka.NewWriter(kafka.WriterConfig{
 		Brokers: []string{brokerAddress},
-		Topic:   "dredd",
+		Topic:   "coalesce",
 	})
 
 	fmt.Println("Sending", string(key), string(value))

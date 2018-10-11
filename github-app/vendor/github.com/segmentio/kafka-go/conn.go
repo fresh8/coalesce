@@ -537,7 +537,7 @@ func (c *Conn) Seek(offset int64, whence int) (int64, error) {
 func (c *Conn) Read(b []byte) (int, error) {
 	batch := c.ReadBatch(1, len(b))
 	n, err := batch.Read(b)
-	return n, dreddErrors(silentEOF(err), batch.Close())
+	return n, coalesceErrors(silentEOF(err), batch.Close())
 }
 
 // ReadMessage reads the message at the current offset from the connection,
@@ -558,7 +558,7 @@ func (c *Conn) Read(b []byte) (int, error) {
 func (c *Conn) ReadMessage(maxBytes int) (Message, error) {
 	batch := c.ReadBatch(1, maxBytes)
 	msg, err := batch.ReadMessage()
-	return msg, dreddErrors(silentEOF(err), batch.Close())
+	return msg, coalesceErrors(silentEOF(err), batch.Close())
 }
 
 // ReadBatch reads a batch of messages from the kafka server. The method always
