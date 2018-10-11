@@ -26,18 +26,16 @@ func main() {
 		message, err := messageBrokerReader.ReadMessage(context.Background())
 		if err != nil {
 			fmt.Println(err)
-			break
-		}
-
-		eventType := string(message.Key)
-		if eventType == "installation_repositories" {
-			err := processInstallationRepositoriesMessage(message.Value)
-			if err != nil {
-				fmt.Println(err)
-				break
+		} else {
+			eventType := string(message.Key)
+			if eventType == "installation_repositories" {
+				err := processInstallationRepositoriesMessage(message.Value)
+				if err != nil {
+					fmt.Println(err)
+					break
+				}
 			}
 		}
-
 	}
 
 	messageBrokerReader.Close()

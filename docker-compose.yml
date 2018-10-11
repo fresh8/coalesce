@@ -3,6 +3,7 @@ services:
   circleci-service:
     build:
       context: ./circleci-service
+      dockerfile: Dockerfile.dev
     links:
       - kafka
     depends_on:
@@ -11,14 +12,17 @@ services:
   resource-service:
     build:
       context: ./resource-service
+      dockerfile: Dockerfile.dev
     links:
       - kafka
     depends_on:
+      - circleci-db
       - kafka
     env_file: .env
   github-app:
     build:
       context: ./github-app
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
     links:
@@ -34,3 +38,16 @@ services:
     environment:
       ADVERTISED_PORT: 9092
       ADVERTISED_HOST: kafka
+  circleci-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: "dredd_circleci"
+      POSTGRES_USER: "docker"
+      POSTGRES_PASSWORD: "docker"
+    volumes:
+      - ./circleci-service/sql:/docker-entrypoint-initdb.d
+    ports:
+      - "5000:5000"
+    command: -p 5000
+    # logging:
+    #   driver: none

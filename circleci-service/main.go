@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
+
+	_ "github.com/lib/pq"
 
 	"github.com/jszwedko/go-circleci"
 	"github.com/segmentio/kafka-go"
@@ -13,6 +16,7 @@ import (
 
 var (
 	client *circleci.Client
+	db     *sql.DB
 )
 
 func main() {
@@ -27,6 +31,8 @@ func main() {
 		Partition: 0,
 	})
 
+	dbConnect()
+
 	// Only read new messages (according to Kafka)
 	messageBrokerReader.SetOffset(-2)
 
@@ -34,21 +40,30 @@ func main() {
 		message, err := messageBrokerReader.ReadMessage(context.Background())
 		if err != nil {
 			fmt.Println(err)
-			break
-		}
-
-		eventType := string(message.Key)
-		if eventType == "repo_added" {
-			err := processRepoAddedMessage(message.Value)
-			if err != nil {
-				fmt.Println(err)
-				break
+		} else {
+			eventType := string(message.Key)
+			if eventType == "repo_added" {
+				err := processRepoAddedMessage(message.Value)
+				if err != nil {
+					fmt.Println(err)
+					break
+				}
 			}
 		}
-
 	}
 
 	messageBrokerReader.Close()
+}
+
+func dbConnect() {
+	var err error
+	connStr := "postgres://docker:docker@circleci-db:5000/dredd_circleci?sslmode=disable"
+	fmt.Println("Connecting to DB")
+	db, err = sql.Open("postgres", connStr)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 func processRepoAddedMessage(message []byte) error {
@@ -62,6 +77,9 @@ func processRepoAddedMessage(message []byte) error {
 
 	repoNameParts := strings.Split(repoUpdatedMessage.RepoName, "/")
 
+	// Follow the project first because CircleCI's API is found wanting
+	client.FollowProject(repoNameParts[0], repoNameParts[1])
+
 	project, err := client.GetProject(repoNameParts[0], repoNameParts[1])
 	if err != nil {
 		return err
@@ -71,6 +89,22 @@ func processRepoAddedMessage(message []byte) error {
 		fmt.Printf("Repository %q is not set up in CircleCI!\n", repoUpdatedMessage.RepoName)
 	} else {
 		fmt.Printf("Repository %q is set up in CircleCI, neato!\n", repoUpdatedMessage.RepoName)
+
+		slackWebhookURL := ""
+		slackWebhookID := ""
+		if project.SlackWebhookURL != nil {
+			slackWebhookURL = *project.SlackWebhookURL
+
+			slackWebhookURLParts := strings.Split(slackWebhookURL, "/")
+			if len(slackWebhookURLParts) > 0 {
+				slackWebhookID = slackWebhookURLParts[len(slackWebhookURLParts)-2]
+			}
+		}
+
+		db.QueryRow(fmt.Sprintf(`INSERT INTO circleci(repo_full_name, slack_webhook_url, slack_webhook_id) VALUES('%s', '%s', '%s')`, repoUpdatedMessage.RepoName, slackWebhookURL, slackWebhookID))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -8,6 +8,15 @@
   version = "v0.2.0"
 
 [[projects]]
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid"
+  ]
+  revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/segmentio/kafka-go"
   packages = ["."]
   revision = "48c37f796910d8154479aaa04ade5843ae4f55d0"
@@ -16,6 +25,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "84e02fc6018827dc7b189a84a876ab6978a8002b877c303793bb5bc9c37cf89d"
+  inputs-digest = "d1bb6953d23c1015b662de11d799a3eab32992ee597ebd149c92279e6233dae1"
   solver-name = "gps-cdcl"
   solver-version = 1

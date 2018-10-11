@@ -1,0 +1,14 @@
+linters:
+  enable:
+    - gosec
+    - interfacer
+    - unconvert
+    - dupl
+    - goconst
+    - gocyclo
+    - gofmt
+    - megacheck
+    - depguard
+    - unparam
+    - nakedret
+    - prealloc
